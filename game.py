@@ -29,7 +29,18 @@ map = [
     ["Throne Room", "", [6], True, True],
 ]
 
-# narrate descriptions word by word
+# 2D array of items
+items = [
+    # Item type 0 = Useless item
+    # Item type 1 = Key
+    # Item type 2 = Torch
+
+    # Room -1 = player's inventory
+    ## Name, Room, Item Type
+    ["Skeleton Plushie", 1, 0]
+]
+
+# narrate speech word by word
 def narrate(txt):
     txt_split = txt.split()
     for word in txt_split:
@@ -37,29 +48,51 @@ def narrate(txt):
         sleep(0.15)
     print()
 
-# main loop
-def move_rooms():
+            
+# choice menu - main loop
+def menu():
     # globals
+    global in_game
     global room
     global prev_room
-
+    global hp
+        
+    # the current room - game starts at the gate
+    room = map[0]
+    # player starts at 20 hp
+    hp = 20
+    # playing
     in_game = True
+
     while in_game:
-        # print the room description before moving
+        # print the room description
         describe_room()
 
-        try:
-            next_room = int(input("\nWhich room would you like to move to? (room no.) - "))
-            print("\n────────────────────────")
-        except:
-            # if user enters an invalid input
-            print("\n[!] Invalid input. Please enter an integer.\n────────────────────────")
-            continue
+        choice = int(input("\n────────────────────────\nWhat will you do?\n[0] Move\n[1] Items\n - "))
+        # move
+        if choice == 0:
+            move_rooms()
+        # open inventory
+        elif choice == 1:
+            print("\nINVENTORY:\n")
+            for i in items:
+                if i[1] == -1:
+                    print(f"{i[0]}")
+
+
+# main loop for moving
+def move_rooms():
+    global room
+    try:
+        next_room = int(input("\nWhich room would you like to move to? (room no.) - "))
 
         # if the user enters a non-existent room
         if next_room < 0 or next_room >= len(map):
             print("\n[!] This room doesn't exist. Please enter a different integer.")
-            continue
+
+        # if the user is already in that room
+        elif map[next_room] == room:
+            print("\n[!] You are already in that room.")
 
         # if the room is not connected through a door
         elif next_room not in connected_rooms:
@@ -71,7 +104,7 @@ def move_rooms():
             # confirm?
             if confirm_leave == "y":
                 in_game = False
-                print("\nYou creak open the door and sprint outside, not looking back.")
+                print("\nYou crawl through the gate and sprint outside, not looking back.")
             else:
                 print("\nYou decide to keep going.")
 
@@ -85,21 +118,31 @@ def move_rooms():
             prev_room = room
             room = map[next_room]
 
+    except ValueError:
+        # if user enters an invalid input
+        print("\n[!] Invalid input. Please enter an integer.")
+    
+    # go back to the select menu by ending the function
+
 # gives the name and description of the room
 def describe_room():
     global connected_rooms
 
-    print(f"\nYou are in the [{map.index(room)}] {room[0]}.\n")
+    print(f"You are in the [{map.index(room)}] {room[0]}.\n")
     if room[3]:
-        print(f"{room[1]}The doors in this room lead to:")
+        print(f"{room[1]}\nThe doors in this room lead to:")
         connected_rooms = room[2]
         for i in connected_rooms:
             print(f"[{i}] {map[i][0]}")
+        for i in items:
+            if i[1] == map.index(room):
+                if input(f"\nYou found the {i[0]}. Pick it up? (y/n) - ") == "y":
+                    items[items.index(i)][1] = -1
+                    print(f"You got the {i[0]}.")
+                else:
+                    print(f"You left the {i[0]} in the room.")
     else:
-        print(f"It's too dark to see anything.")
-
-# the current room - game starts at the gate
-room = map[0]
+        print("It's too dark to see anything.")
 
 ## start the game
 
@@ -121,7 +164,7 @@ print("""
       """)
 
 # skip cutscene
-if input("Skip? (y) - ") != "y":
+if input("Skip Cutscene? (y/n) - ") != "y":
 
     sleep(2)
     narrate("WELCOME, PLAYER.")
@@ -166,5 +209,5 @@ else:
     difficulty = "Easy"
 
 print("\n\nYou cautiously tread underneath the towering gate. The long hall ahead is dimly lit, and dusty cobwebs span the corners.\n")
-move_rooms()
+menu()
 
