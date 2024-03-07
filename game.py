@@ -19,14 +19,14 @@ map = [
     ["Gate", "A large, rusty metal gate. It's where you entered.", [1], True, False],
     ["Main Hall", "A long, dimly-lit corridor with cobwebs spanning the walls.", [0, 2, 5, 7], True, False],
 
-    # East rooms
-    ["East Entrance", "A small foyer with the entrance to the east dungeon.", [1, 3, 4], True, False],
-    ["Shop", "A shop owned by a weary skeleton. He doesn't notice you're a human.", [2, 4], True, False],
-    ["East Dungeon", "The long, dark prison is full of monsters guarding jail cells.", [2, 3, 8], False, False],
-
     # West rooms
-    ["West Entrance", "A small foyer with the entrance to the west dungeon.", [1, 6, 9], True, False],
-    ["West Dungeon", "The long, dark prison is full of monsters guarding jail cells. There is also a magnificent golden door.", [5, 10], False, False],
+    ["West Entrance", "A small foyer with the entrance to the east dungeon.", [1, 3, 4], True, False],
+    ["Shop", "A shop owned by a weary skeleton. He doesn't notice you're a human.", [2, 4], True, False],
+    ["West Dungeon", "The long, dark prison is full of monsters guarding jail cells.", [2, 3, 8], False, False],
+
+    # East rooms
+    ["East Entrance", "A small foyer with the entrance to the west dungeon.", [1, 6, 9], True, False],
+    ["East Dungeon", "The long, dark prison is full of monsters guarding jail cells. There is also a magnificent golden door.", [5, 10], False, False],
 
     # Locked rooms
     ["North Entrance", "A well-protected pathway with ominous, high-tech doors. It seems important.", [1, 8, 9], False, True],
@@ -56,7 +56,7 @@ items = [
     ["North Entrance Key", 4, 2, 7],
     ["Missteak", 5, 1, 50],
     ["Vault Key", 6, 2, 8],
-    ["Throne Room Key", 6, 2, 10], # temporarily in west dungeon, shoud be in vault
+    ["Throne Room Key", 6, 2, 10], # temporarily in east dungeon, shoud be in vault
     ["Old Book", 9, 4, "-- THE SILLY STRINGS by Mike D. --\nHave you lost control of your life? You just got to grab it by the silly strings!\n...the book is confusing you."]
 ]
 
@@ -86,6 +86,7 @@ hp = 100
 # player starts with a full inventory
 inventory_count = 0
 coins = 0
+west_puzzle_completed = False
 # encounter chance starts at 1/4 (3)
 encounter_chance = 3
 # playing
@@ -155,7 +156,7 @@ def move_rooms():
             # confirm?
             if confirm_leave == "y":
                 in_game = False
-                print(f"\nYou crawl through the gate and sprint outside, not looking back.\nCOINS: {coins}")
+                print(f"\n[GAME OVER]\nYou crawl through the gate and sprint outside, not looking back.\nCOINS: {coins}")
             else:
                 print("\nYou decide to keep going.")
         
@@ -183,8 +184,9 @@ def move_rooms():
 # run the RNG for an encounter
 def handle_encounters():
     global room, encounter_chance
+
     if room == map[10]:
-        final_boss()
+        final_boss() # final boss room
     elif randint(0,encounter_chance) == 0:
         # choose an enemy
         encounter = choice(enemies)
@@ -194,6 +196,83 @@ def handle_encounters():
             battle(encounter)
         else:
             print("Or not.")
+        
+# west dungeon puzzle 
+def west_puzzle():
+    global west_puzzle_completed
+    if map.index(room) == 4 and not west_puzzle_completed:
+        # mirror puzzle - rotate mirrors to let in the light
+        # Solution: D1 \, D3 /, A3 /, A4 \
+        # Possible rotations / True, \ False (two backslashes needed to get a single backslash)
+
+        # mirrors: D1,   D3,   A3,   A4
+        mirrors = ["/", "\\", "/", "/"]
+
+        # light paths
+        light_paths = [
+            "# # #", # A1 to D1
+            "#", # D1 to D3
+            "# #", # D3 to A3
+            "# # # #" # A4 to E4
+        ]
+
+        print("WEST DUNGEON PUZZLE\nLet the light pierce the darkness. Let the mirrors guide the way.\nLight will come from A1 and collected in E4\nMirror IDs: D1 = 0, D3 = 1, A3 = 2, A4 = 3")
+
+        in_puzzle = True
+        while in_puzzle:
+            # print progress
+            print(f"""
+        A B C D E
+    1 > {light_paths[0]} {mirrors[0]} # 
+    2   # # # {light_paths[1]} #
+    3   {mirrors[2]} {light_paths[2]} {mirrors[1]} #
+    4   {mirrors[3]} {light_paths[3]} >
+                """)
+            
+            # rotate
+            for mirror_selected in range(len(mirrors)):
+                rotating = True
+                while rotating:
+                    if mirrors[mirror_selected] == "/":
+                        mirror_bool = True
+                    else:
+                        mirror_bool = False
+                    rotate = input(f"\nRotate Mirror {mirror_selected}:\n     {mirrors[mirror_selected]}\nR to rotate - (Anything else to confirm postion)\n - ")
+                    if rotate == "R" or rotate == "r":
+                        mirror_bool = not mirror_bool
+                        if mirror_bool:
+                            mirrors[mirror_selected] = "/"
+                        else:
+                            mirrors[mirror_selected] = "\\"
+                    else:
+                        rotating = False
+            
+            # check the puzzle solution
+            if mirrors[0] == "\\":
+                # if first mirror correct
+                light_paths[0] = "- - -"
+
+                if mirrors[1] == "/":
+                    # if second mirror correct
+                    light_paths[1] = "|"
+
+                    if mirrors[2] == "/":
+                        # if third mirror correct
+                        light_paths[2] = "- -"
+
+                        if mirrors[3] == "\\":
+                            # if the whole puzzle is correct
+                            light_paths[3] = "- - - -"
+                            in_puzzle = False
+        print(f"""
+        A B C D E
+    1 > {light_paths[0]} {mirrors[0]} # 
+    2   # # # {light_paths[1]} #
+    3   {mirrors[2]} {light_paths[2]} {mirrors[1]} #
+    4   {mirrors[3]} {light_paths[3]} >
+    You have completed the puzzle!""")
+        west_puzzle_completed = True
+
 
 # enter battle state after an encounter
 def battle(enemy):
@@ -408,6 +487,14 @@ def final_boss():
         # check player hp
         check_hp()
 
+        # boss puzzles
+        if turn == 4:
+            boss_puzzle_1()
+        elif turn == 8:
+            boss_puzzle_2()
+        elif turn == 12:
+            boss_puzzle_3()
+
         # enemy stats: name, attack, hp, spells
         print(f"\nENEMY: [{enemy_name} - HP: {enemy_hp} / {enemy_max_hp} - ATK: {enemy_atk}")
         print(f"\nPLAYER: [{name} - HP: {hp} / {max_hp} - MAGIC POINTS: {mp}]")
@@ -506,6 +593,15 @@ def final_boss():
         except ValueError:
             print("[!] Invalid input. Please enter an integer.")
 
+# boss fight puzzles every 4 turns
+def boss_puzzle_1():
+    pass
+
+def boss_puzzle_2():
+    pass
+
+def boss_puzzle_3():
+    pass
 
 # print player stats
 def player_stats():
@@ -525,6 +621,7 @@ def check_hp():
         narrate("IT SEEMS YOU HAVE PERISHED...")
         narrate("WELL, THERE IS ALWAYS NEXT TIME.")
         narrate("IF YOU CHOOSE TO CONTINUE... I WISH YOU THE BEST OF LUCK.")
+        print(f"COINS: {coins}")
         exit()
 
 # check if player holding torch, if yes then light up all rooms
@@ -639,6 +736,7 @@ def describe_room():
         connected_rooms = room[2]
         for i in connected_rooms:
             print(f"[{i}] {map[i][0]}")
+        west_puzzle()
         handle_room_items()
     else:
         print("It's too dark to see anything.")

@@ -14,6 +14,7 @@ Dungeon crawler text-adventure game for my Computer Science project
 - add torch dropping thing
 - add ability to cancel after choosing magic or items in battle but not waste a turn
 - add function to shop and vault
+- add puzzles
 - add rooms available to move to after choosing to move
 
 - add points system
