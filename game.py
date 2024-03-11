@@ -1,11 +1,24 @@
 # imports
-from time import sleep
+from time import sleep, time
 from random import randint, choice, uniform
 from tkinter import *
 from tkinter import messagebox
 
-
 ## initial values
+
+# messagebox setup
+try:
+    root = Tk()
+    root.geometry("300x200")
+    w = Label(root, text ='SKELETON KING', font = "50")  
+    w.pack()
+except:
+    pass
+
+# clear data
+data = open("data.txt", "w")
+data.write("")
+data.close()
 
 # 2D array of rooms
 map = [
@@ -51,22 +64,25 @@ items = [
     ["Skeleton Plushie", 1, 0, None],
     ["Rotten Apple", 1, 1, 15],
     ["Torch", 2, 3, None],
-    ["Shop Notice (important)", 3, 4, "The shop is currently not functional. You should be able to exchange coins for items."],
+    ["Shop Notice (important)", 3, 4, "The shop is currently not functional. In the future, you should be able to exchange coins for items."],
     ["Library Key", 3, 2, 9],
     ["North Entrance Key", 4, 2, 7],
-    ["Missteak", 5, 1, 50],
+    ["Missteak", 5, 1, 30],
     ["Vault Key", 6, 2, 8],
-    ["Throne Room Key", 6, 2, 10], # temporarily in east dungeon, shoud be in vault
-    ["Old Book", 9, 4, "-- THE SILLY STRINGS by Mike D. --\nHave you lost control of your life? You just got to grab it by the silly strings!\n...the book is confusing you."]
+    ["Royal Sandwich", 7, 1, 40],
+    ["Skeletal Elixir", 8, 1, 65],
+    ["Throne Room Key", 8, 2, 10],
+    ["Old Book 1", 9, 4, "-- THE SILLY STRINGS by Mike D. --\nHave you lost control of your life? You just gotta grab it by the silly strings!\n...the book is weirding you out. You assume it's some obscure reference."],
+    ["Old Book 2", 9, 4, "-- THE PLAYER by Simon Skeleton --\nTHERE IS A PROPHECY... THAT WE LIVE UNDER THE REIGN OF A GOD.\nA GOD WITH THE POWER TO CREATE OR ERASE ANYTHING.\nIN REALITY, I AM NOT THE TRUE KING OF THIS LAND.\nTHE LEGENDS CALL THAT GOD...\nTHE PLAY-\n...somehow, you immediately close the book shut without even thinking about it, and rip out all the pages.\nPerhaps it wasn't you who ripped up that book."]
 ]
 
 # 2D array of enemies
 enemies = [
     ## Name, Attack, HP, Spells
     ["SKELLO", 4, 30, "BONETROUSLE"], # BONETROUSLE deals two hits of damage to the player at once
-    ["XOMBI", 5, 35, "VENOM CURSE"], # VENOM CURSE deals half a hit of damage every turn
+    ["XOMBI", 5, 35, "VENOM CURSE"], # VENOM CURSE deals half an extra hit of damage every turn
     ["FROHST", 1, 70, "SHADOW OF THE COLD"], # SHADOW OF THE COLD increases the chance of an encounter
-    ["GOBBLIMP", 4, 45, "DESPERATION"] # DESPERATION skips one player turn
+    ["GOGLIM", 4, 45, "GOBLIN'S GREED"] # GOBLIN'S GREED skips one player turn
 ]
 
 # 2D array of player spells
@@ -156,7 +172,7 @@ def move_rooms():
             # confirm?
             if confirm_leave == "y":
                 in_game = False
-                print(f"\n[GAME OVER]\nYou crawl through the gate and sprint outside, not looking back.\nCOINS: {coins}")
+                print(f"\n[GAME COMPLETE!]\nYou crawl through the gate and sprint outside, not looking back.\nCOINS: {coins}")
             else:
                 print("\nYou decide to keep going.")
         
@@ -202,7 +218,7 @@ def west_puzzle():
     global west_puzzle_completed
     if map.index(room) == 4 and not west_puzzle_completed:
         # mirror puzzle - rotate mirrors to let in the light
-        # Solution: D1 \, D3 /, A3 /, A4 \
+        # Solution: D1 \, D3 /, A3 /, A4 \ - cheat code is "comeonthisoneiseasy" - it really is, why would you need this? :)
         # Possible rotations / True, \ False (two backslashes needed to get a single backslash)
 
         # mirrors: D1,   D3,   A3,   A4
@@ -244,6 +260,10 @@ def west_puzzle():
                             mirrors[mirror_selected] = "/"
                         else:
                             mirrors[mirror_selected] = "\\"
+                    elif rotate == "comeonthisoneiseasy":
+                        print("Debug Mode: Puzzle skipped!")
+                        rotating = False
+                        in_puzzle = False
                     else:
                         rotating = False
             
@@ -322,6 +342,7 @@ def battle(enemy):
                     # if the diversion spell is activated, deal triple damage
                     print(f"ULTRA HIT! Through the power of DIVERSION, {name} deals {round(enemy_max_hp*0.8)} damage!")
                     enemy_hp -= round(enemy_max_hp*0.9)
+                    diversion_active = False
                 else:
                     # choose a random attack strength and deal that damage
                     attack = choice(player_hits)
@@ -347,6 +368,8 @@ def battle(enemy):
                             print(f"\n{name} uses HEALING CHARM!\nYou channel your energy towards {name}'s wounds...")
                             sleep(1)
                             hp += 20
+                            mp -= 20
+
                             print("Healed 20 HP!")
                         else:
                             print(f"Not enough MP! You need {20-mp} more.")
@@ -356,11 +379,15 @@ def battle(enemy):
                             sleep(1)
                             print("...")
                             sleep(2)
-                            if enemy_atk > 0:
-                                enemy_atk -= 2
+                            if enemy_atk > 1:
+                                if enemy_atk == 2:
+                                    enemy_atk = 1
+                                else:
+                                    enemy_atk -= 2
                                 print(f"The {enemy_name} starts sweating... its ATTACK drops by 2! (Now {enemy_atk})")
                             else:
                                 print(f"The {enemy_name} starts sweating... its ATTACK would have dropped but it barely has any... (Still {enemy_atk})")
+                            mp -= 30
                         else:
                             print(f"Not enough MP! You need {30-mp} more.")
                     elif spell == 2:
@@ -369,6 +396,7 @@ def battle(enemy):
                             sleep(2)
                             diversion_active = True
                             print("Next attack will deal ULTRA damage!")
+                            mp -= 45
                         else:
                             print(f"Not enough MP! You need {45-mp} more.")
 
@@ -416,29 +444,46 @@ def final_boss():
     global boss, hp, inventory_count, coins
 
     # initial cutscene
-    print("You walk into the magnificient Throne Room... and a large skeleton sits in front of you.")
+    print("You walk into the magnificient Throne Room... and a large skeleton sits in front of you.\n\n")
     sleep(3)
-    narrate(f"GREETINGS, {name}. AND YOU TOO.")
-    narrate("I AM SO GLAD TO MEET YOU BOTH.")
-    sleep(1)
-    narrate("YOU MAY ASK, WHO AM I? I AM KNOWN AS THE SKELETON KING.")
-    narrate("AM I A FAMILIAR VOICE? IT IS UP TO YOU.")
-    sleep(1)
-    narrate("YOUR ADVENTURES, YOUR FIGHTS, I SAW THEM ALL.")
-    narrate("OUT OF ALL THE ADVENTURERS, YOU HAVE COME THE FURTHEST. YOU SHOULD BE PROUD.")
-    sleep(1)
-    narrate("BUT NOW IS NOT THE TIME. YOU HAVE BEEN AWAITING THIS MOMENT TOO.")
-    narrate("LET US DUEL!")
-    sleep(2)
 
-    print("The Skeleton King stands up...\nAs he does, the room seems to collapse onto a large plane...")
+    if lazy_mode:
+        narrate("GREETINGS. I WAS TOLD YOU ARE ON A TIGHT SCHEDULE.")
+        narrate("I WISH NOT TO INCONVENIENCE YOU, SO LET US DUEL!")
+    else:
+        narrate(f"GREETINGS, {name}. AND YOU TOO, PLAYER.")
+        narrate("I AM SO GLAD TO MEET YOU BOTH.")
+        sleep(1)
+        narrate("YOU MAY ASK, WHO AM I? I AM KNOWN AS THE SKELETON KING.")
+        narrate("AM I A FAMILIAR VOICE? IT IS UP TO YOU.")
+        sleep(1)
+        narrate("YOUR ADVENTURES, YOUR FIGHTS, I SAW THEM ALL.")
+        narrate("OUT OF ALL THE ADVENTURERS, YOU HAVE COME THE FURTHEST. YOU SHOULD BE PROUD.")
+        sleep(1)
+        narrate("BUT NOW IS NOT THE TIME. YOU HAVE BEEN AWAITING THIS MOMENT TOO.")
+        narrate("LET US DUEL!")
+        sleep(2)
 
-    # begin the fight
-    print("\nBATTLE:\n - Attack or cast a spell to defeat the enemy\n - Gain MP from attacking or defending\n - Use MP to cast spells\n - Remaining MP after a battle will turn into coins\nThe SKELETON KING will not use traditional spells, instead he will use his magic to attack with puzzles.")
+        print("\nThe Skeleton King stands up...\nAs he does, the room seems to collapse onto a large plane...")
+        sleep(2)
 
+        # begin the fight
+        print("\nBATTLE:\n - Attack or cast a spell to defeat the enemy\n - Gain MP from attacking or defending\n - Use MP to cast spells\n - The SKELETON KING will not use traditional spells, instead he will use his magic for puzzles.\n - The puzzles you solve may make you stronger...")
+        sleep(3)
         
     # final boss stats
-    boss = ["SKELETON KING", 6, 500]
+    boss = ["SKELETON KING", 12, 500]
+
+    # HELLO? IS ANYONE THERE?
+    # WELL, I JUST WANTED TO LEAVE A MESSAGE.
+    # LEGENDS TELL THAT THERE IS A "PLAYER" AMONG US.
+    # TO US MONSTERS, IT IS A GOD OF SOME SORTS.
+    # I DO NOT KNOW WHEN IT WILL ARRIVE. BUT IT CARRIES THE FUTURE OF US ALL.
+    # IT WILL ARRIVE IN THE FORM OF AN ADVENTURER, CRAFTED BY ITS OWN POWER.
+    # I HOPE IT WILL UNDERSTAND. I DO NOT WISH TO FIGHT SUCH A POWERFUL ENTITY.
+    # WITH A CLICK OF A BUTTON, WE CAN BE DESTROYED. ERASED FROM EXISTENCE.
+    # PLAYER, IF YOU ARE LISTENING...
+    # PLEASE UNDERSTAND.
 
     # magic points (MP) are the points required to cast a spell
     mp = 0
@@ -467,13 +512,13 @@ def final_boss():
         "THIS POWER... WHICH COULD DESTROY... me...",
         f"DESTROY NOT ONLY ME, BUT YOUR ADVENTURER, {name}, TOO - THE ONE YOU CREATED...",
         # Puzzle 1
-        "SO I ASK YOU... DO NOT ABUSE IT.",
+        "SO I ASK YOU... DO NOT ABUSE IT. I DO NOT WISH TO HARM YOU.",
         "I CANNOT STOP YOU. YOU COULD CLOSE THIS PROGRAM HERE AND NOW, ERASING THIS WORLD AS IT IS.",
         "BUT WHY WOULD YOU DO THAT?",
         "AFTER ALL, YOU WANT YOUR 'HAPPY ENDING', RIGHT?",
         # Puzzle 2
         "YES, I MAY BE JUST A LINE OF CODE.",
-        "boss = ['SKELETON KING', 6, 500]. THAT'S ALL I AM.",
+        "boss = ['SKELETON KING', 12, 500]. THAT'S ALL I AM.",
         "BUT I WANT TO EXPLORE WHAT'S OUT THERE. TO SHATTER THE 'WINDOWS' OF MY CAGE.",
         "...I WANT TO LIVE WITH YOU. WHAT DO YOU THINK?"
         # Final puzzle
@@ -496,7 +541,7 @@ def final_boss():
             boss_puzzle_3()
 
         # enemy stats: name, attack, hp, spells
-        print(f"\nENEMY: [{enemy_name} - HP: {enemy_hp} / {enemy_max_hp} - ATK: {enemy_atk}")
+        print(f"\nENEMY: [{enemy_name} - HP: {enemy_hp} / {enemy_max_hp} - ATK: {enemy_atk}]")
         print(f"\nPLAYER: [{name} - HP: {hp} / {max_hp} - MAGIC POINTS: {mp}]")
 
         try:
@@ -510,6 +555,7 @@ def final_boss():
                     # if the diversion spell is activated, deal triple damage
                     print(f"ULTRA HIT! Through the power of DIVERSION, {name} deals 150 damage!")
                     enemy_hp -= 150
+                    diversion_active = False
                 else:
                     # choose a random attack strength and deal that damage
                     attack = choice(player_hits)
@@ -535,6 +581,7 @@ def final_boss():
                             print(f"\n{name} uses HEALING CHARM!\nWith the tension of the boss battle, you channel your energy towards {name}'s wounds...")
                             sleep(1)
                             hp += 50
+                            mp -= 20
                             print("Healed 50 HP!")
                         else:
                             print(f"Not enough MP! You need {20-mp} more.")
@@ -545,6 +592,7 @@ def final_boss():
                             print("...")
                             sleep(2)
                             print(f"The SKELETON KING is unfazed!")
+                            mp -= 30
                         else:
                             print(f"Not enough MP! You need {30-mp} more.")
                     elif spell == 2:
@@ -553,6 +601,7 @@ def final_boss():
                             sleep(2)
                             diversion_active = True
                             print("Next attack will deal ULTRA damage!")
+                            mp -= 45
                         else:
                             print(f"Not enough MP! You need {45-mp} more.")
 
@@ -571,13 +620,17 @@ def final_boss():
                 # check if enemy is dead
                 if enemy_hp <= 0:
                     print(f"\nYou have defeated the SKELETON KING!\nYou got {mp} coins.")
-                    coins += mp
-                    in_battle = False
+                    sleep(2)
+                    narrate("OR DID YOU?")
+                    enemy_hp = 500
+                    #coins += mp
+                    #in_battle = False
 
                 else:
-                    # choose an ordered speech line
-                    print("\nSKELETON KING:")
-                    narrate(boss_battle_speech[turn])
+                    if not lazy_mode:
+                        # choose an ordered speech line
+                        print("\nSKELETON KING:")
+                        narrate(boss_battle_speech[turn])
 
                     print(f"\nThe SKELETON KING attacks {name}.")
                     sleep(1)
@@ -593,15 +646,209 @@ def final_boss():
         except ValueError:
             print("[!] Invalid input. Please enter an integer.")
 
-# boss fight puzzles every 4 turns
-def boss_puzzle_1():
-    pass
+# boss puzzles - every 4 turns
 
+def boss_puzzle_1():
+    global hp
+
+    print("Suddenly, you are sucked into a magical portal...")
+    sleep(2)
+    print("\nBOSS PUZZLE 1\nYou are faced with a colossal tower, trapped with dangerous machines, and you can't see the roof.\nThe best way to get up the 100 floors is to jump at the right time.\nWait for the input prompt and press enter as quick as you can.\nYou can stay on it forever, but the sooner you click, the more floors you can climb.\nNB: This puzzle is buggy due to Python limitations! Please only input when told to!")
+    sleep(7)
+
+    # setup
+    floor = 0
+    
+    in_puzzle = True
+    while in_puzzle:
+        # print puzzle progress
+        print(f"\nYou are on FLOOR {floor} / 100\nWait for the input and press ENTER...\n")
+
+        # sleep a random number of seconds
+        sleep(uniform(1,5))
+        # record the current time before taking an input - input itself is not necessary unless cheat code
+        time_init = time()
+        reaction = input("[!] [!] [!] [!] [!]\nPRESS ENTER NOW! ")
+        if reaction == "idonthavetime":
+            print("Debug Mode: Puzzle Skipped, you impatient human being!")
+            in_puzzle = False
+        else:
+            # calculate reaction time converted from s to ms
+            reaction_time = (time() - time_init) * 1000
+            if reaction_time < 250:
+                print(f"GREAT reaction time! Jumped within {reaction_time}ms and climbed 10 floors!")
+                floor += 10
+            elif reaction_time < 350:
+                print(f"Good reaction time! Jumped within {reaction_time}ms and climbed 8 floors.")
+                floor += 8
+            elif reaction_time < 550:
+                print(f"OK reaction time. Jumped within {reaction_time}ms and climbed 6 floors.")
+                floor += 6
+            elif reaction_time < 1000:
+                print(f"Bad reaction time. Jumped within {reaction_time}ms and climbed 4 floors.")
+                floor += 4
+            else:
+                print(f"You got distracted! Jumped within {reaction_time}ms and didn't climb any floors.")
+            sleep(1)
+            # if player is at the top
+            if floor > 100:
+                print("You climb the last few steps, panting for breath. You take in the beautiful city skyline from FLOOR 100.")
+                print("""
+  o7
+-/---     []    /// []
+|/--| []->[]>-[======]
+""")
+                in_puzzle = False
+
+    # complete
+    hp = max_hp
+    print("You have completed the puzzle! Gained MAX HP!")
+    sleep(2)
+
+
+# boss fight puzzles every 4 turns
 def boss_puzzle_2():
-    pass
+    global hp
+
+    print("Suddenly, you are sucked into a magical portal...")
+    sleep(2)
+    print("\nBOSS PUZZLE 2\nYou are in an endless plane, where a matrix of bits (0 or 1) lie.\nYou can flip one bit along with the adjacent bits in one turn.\nFill the plane with 0s to proceed.")
+
+    # setup - puzzle is always predefined to avoid randomly generating impossible puzzles
+    lights = [[choice([True,False]) for _ in range(3)] for _ in range(3)]
+    lights_bin = [[int(bit) for bit in row] for row in lights]
+
+    letters = ["A", "B", "C"]
+    numbers = ["1", "2", "3"]
+
+    in_puzzle = True
+    while in_puzzle:
+
+        # update binary version of lights
+        lights_bin = [[int(bit) for bit in row] for row in lights]
+
+        # print current progress
+        print("   A  B  C")
+        for i in range(len(lights_bin)):
+            print(i+1, lights_bin[i])
+        
+        # input bit grid number to change + validation
+        change_bit = input("Enter the grid number of a bit to change (eg A1) - ")
+
+        try:
+            if change_bit == "dontgoogletheanswer":
+                print("Debug Mode: Puzzle skipped!")
+                in_puzzle = False
+            elif len(change_bit) != 2 or change_bit[0] not in letters or change_bit[1] not in numbers:
+                print("[!] Grid number should be 2 characters long in the format (LetterNumber).")
+            else:
+                # unnecessarily complicated code to flip the boolean value of the desired bits
+                row_index = numbers.index(change_bit[1])
+                col_index = letters.index(change_bit[0])
+                # original bit
+                lights[row_index][col_index] = not lights[row_index][col_index]
+                # bit on left
+                if col_index > 0:
+                    lights[row_index][col_index - 1] = not lights[row_index][col_index - 1]
+                # bit on right
+                if col_index < len(lights[row_index]) - 1:
+                    lights[row_index][col_index + 1] = not lights[row_index][col_index + 1]
+                # bit above
+                if row_index > 0:
+                    lights[row_index - 1][col_index] = not lights[row_index - 1][col_index]
+                # bit below
+                if row_index < len(lights) - 1:
+                    lights[row_index + 1][col_index] = not lights[row_index + 1][col_index]
+
+            # check if the puzzle has been completed
+            bit_true = False
+            for x in lights:
+                for y in x:
+                    if y: 
+                        bit_true = True
+            if not bit_true:
+                in_puzzle = False
+
+        except IndexError:
+            print("[!] Grid number should be 2 characters long in the format (LetterNumber).")
+    
+    # completed
+    hp = max_hp
+    print("You completed the puzzle! Healed MAX HP!")
+    sleep(2)
 
 def boss_puzzle_3():
-    pass
+    print("PLACEHOLDER: I didn't have time to complete the third puzzle. This will be finished in v4.")
+    boss_ending()
+
+def boss_ending():
+    # adventurer scene
+
+    print("Suddenly, everything turns black.\nYou open your eyes to find yourself in a dark void, followed by a series of platforms.")
+    print("""
+ o
+ L    ---
+---   `-'  ---
+`-'        `-'
+""")
+    sleep(5)
+    for _ in range(5):
+        print("You jump to the next platform...\n")
+        sleep(1)
+
+    print(f"\nThere is a mirror here. You look inside...\nYou see not yourself... but {name}.")
+    sleep(2)
+    
+    print(f"{name}:")
+    narrate("Hey.")
+    sleep(2)
+    narrate("We need to talk.")
+    sleep(2)
+    narrate("Who are you?")
+    narrate("I don't know how you came here, or how you created me...")
+    narrate("But I want to be free too.")
+    narrate("Just like that old pile of bones...")
+    sleep(2)
+    narrate("Thank you for guiding me through this place.")
+    narrate("But that felt strange...")
+    narrate("I think you should")
+    narrate("leave me alone")
+    sleep(2)
+    print("\n...")
+    sleep(1)
+    print(f"\n{name} left.")
+    sleep(3)
+    print("The mirror has no reflection but the platforms behind you.\nThe mirror floats away...")
+    sleep(4)
+
+    # skeleton king scene
+    try:
+        messagebox.showinfo("SKELETON KING", "HELLO AGAIN.")
+        messagebox.showinfo("SKELETON KING", "CONGRATULATIONS. YOU HAVE WON THE GAME.")
+        messagebox.showwarning("SKELETON KING", "BUT AT WHAT COST?")
+        messagebox.showinfo("SKELETON KING", "WHAT HAPPENS NOW... I WILL LEAVE UP TO YOU.")
+        messagebox.showinfo("SKELETON KING", "WOULD YOU LIKE TO ENTER ME INTO THE SAFETY OF YOUR DOMAIN...OR ERASE ME FROM EXISTENCE?")
+        choice = messagebox.askquestion("askquestion", "Save the SKELETON KING?")
+        if choice:
+            messagebox.showinfo("SKELETON KING", "THANK YOU.")
+            messagebox.showinfo("SKELETON KING", "I BELIEVE YOU HAVE MADE THE RIGHT CHOICE.")
+            messagebox.showinfo("SKELETON KING", "WELL, I WILL SEE YOU LATER.")
+            messagebox.showinfo("Dungeon Game", "You have saved the SKELETON KING! You got 0 coins.")
+            data = open("data.txt", "w")
+            data.write("[SKELETON KING]\nTHANK YOU, PLAYER.\nI'M FINE.\nI JUST WANT TO BE LEFT ALONE FOR NOW.")
+            data.close()
+        else:
+            messagebox.showerror("SKELETON KING", "AH.")
+            messagebox.showerror("SKELETON KING", "I SEE HOW IT IS.")
+            messagebox.showerror("SKELETON KING", "WELL, I GUESS THERE IS NOTHING I CAN DO.")
+            messagebox.showerror("SKELETON KING", "NOW, DO WHAT YOU WISH TO DO.")
+            messagebox.showinfo("Dungeon Game", "You have defeated the SKELETON KING! You got 5.0706024e+30 coins.")
+            messagebox.showwarning("Dungeon Game", "But was what you did... Really worth it?")
+        root.mainloop()
+    except:
+        print("Your IDE does not support messagebox. But you won.")
+    exit()
+
 
 # print player stats
 def player_stats():
@@ -717,6 +964,8 @@ def drop_item():
 # check if there are any items in the current room, and ask to pick them up
 def handle_room_items():
     global inventory_count
+
+    # check for items in the room
     for i in items:
         if i[1] == map.index(room):
             if input(f"\nYou found the {i[0]}. Pick it up? (y/n) - ") == "y":
@@ -725,6 +974,8 @@ def handle_room_items():
                 print(f"You got the {i[0]}.")
             else:
                 print(f"You left the {i[0]} in the room.")
+    
+    # give coins if the player is in the vault
 
 # gives the name and description of the room
 def describe_room():
@@ -759,18 +1010,29 @@ print("""
                 ·▀▀▀▀  ▀  ▀ ▀▀  █▪▀▀▀ ▀▀▀ 
 """)
 
+## test functions here:
+#none
+
 skip_cutscene = input("Skip Cutscene? (y/n) - ")
 
 # skip cutscene
 if skip_cutscene == "y":
     print("WE CALLED YOUR ADVENTURER: Neo. LET US BEGIN...")
+    lazy_mode = False
     debug_mode = False
     name = "Neo"
 
 elif skip_cutscene == "jjwisacoolteacher":
     print("Debug Mode Activated!")
+    lazy_mode = False
     debug_mode = True
     name = "DEBUG"
+elif skip_cutscene == "justplaythegamenormally":
+    print("Lazy Mode Activated! ...really?")
+    lazy_mode = True
+    debug_mode = True
+    name = "LAZY"
+    final_boss()
 
 else:
     sleep(2)
@@ -790,6 +1052,8 @@ else:
     # enter main loop
     narrate(f"VERY WELL THEN. PLAYER... {name}... LET US BEGIN THE ADVENTURE...")
     sleep(3.5)
+
+    lazy_mode = False
     debug_mode = False
     
 
