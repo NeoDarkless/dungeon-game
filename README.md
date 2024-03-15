@@ -7,18 +7,25 @@ Dungeon crawler text adventure game for my Computer Science project
 - Solve puzzles and learn about the story
 - Final Boss...?
 
+## How to Play
+- If you're on GitHub, hop over to the latest release, download and extract the .zip file.
+- You can also download the source code from the "Code" menu.
+- Once you've extracted everything into a folder, double click game.py and play!
+
 ## Major bugs
-- (FIXED) Glaring at an enemy while it is at 2 ATK will bring it to 0 - it will deal no damage
-- On the Boss Puzzle 1, making an input before the reaction prompt will count that input anyway.
+- (FIXED) ~~Glaring at an enemy while it is at 2 ATK will bring it to 0 - it will deal no damage~~
+- On the Boss Puzzle 1, making an input before the reaction prompt will count that input anyway
+- On lazy mode, you go to the start of the game after finishing the boss. Maybe stop being lazy
+- GOBLIN'S GREED simply doesn't work
 
 ## Future improvements
-- finish boss puzzle 3
-- add enemy magic
-- add torch dropping thing
-- add ability to cancel after choosing magic or items in battle but not waste a turn
-- add function to shop
-- add rooms available to move to after choosing to move
-- add points system
+- (done) add tutorial
+- (shhh) finish boss puzzle 3
+- (done) add enemy magic
+- (done) if an item is a consumable, show the hp it can heal
+- (done) add function to shop
+- (done) rework damage system
+
 
 ## Cheat codes (only use if you're stuck! (or if you want to be a menace))
 - "jjwisacoolteacher" on Skip Cutscene prompt - removes all non-boss enemy encounters (DEBUG MODE)

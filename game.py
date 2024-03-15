@@ -6,16 +6,13 @@ from tkinter import messagebox
 
 ## initial values
 
-# messagebox setup
+# messagebox setup (ignore this)
 try:
     root = Tk()
-    root.geometry("300x200")
-    w = Label(root, text ='SKELETON KING', font = "50")  
-    w.pack()
 except:
     pass
 
-# clear data
+# clear data (also ignore this)
 data = open("data.txt", "w")
 data.write("")
 data.close()
@@ -60,20 +57,23 @@ items = [
     # Room -2 = shop exclusive item
     # Room None = item has been consumed
 
-    ## Name, Room, Item Type, Data (Room key, HP etc)
+    ## Name, Room, Item Type, Data (Room key, HP etc), If in shop, price in coins
     ["Skeleton Plushie", 1, 0, None],
-    ["Rotten Apple", 1, 1, 15],
-    ["Torch", 2, 3, None],
-    ["Shop Notice (important)", 3, 4, "The shop is currently not functional. In the future, you should be able to exchange coins for items."],
-    ["Library Key", 3, 2, 9],
+    ["Rotten Apple", 2, 1, 15],
+
+    ["Torch", -2, 3, None, 0],
+    ["Library Key", -2, 2, 9, 50],
+    ["Royal Sandwich", -2, 1, 40, 30],
+    ["Toy Gun", -2, 0, None, 20],
+
     ["North Entrance Key", 4, 2, 7],
     ["Missteak", 5, 1, 30],
     ["Vault Key", 6, 2, 8],
     ["Royal Sandwich", 7, 1, 40],
     ["Skeletal Elixir", 8, 1, 65],
     ["Throne Room Key", 8, 2, 10],
-    ["Old Book 1", 9, 4, "-- THE SILLY STRINGS by Mike D. --\nHave you lost control of your life? You just gotta grab it by the silly strings!\n...the book is weirding you out. You assume it's some obscure reference."],
-    ["Old Book 2", 9, 4, "-- THE PLAYER by Simon Skeleton --\nTHERE IS A PROPHECY... THAT WE LIVE UNDER THE REIGN OF A GOD.\nA GOD WITH THE POWER TO CREATE OR ERASE ANYTHING.\nIN REALITY, I AM NOT THE TRUE KING OF THIS LAND.\nTHE LEGENDS CALL THAT GOD...\nTHE PLAY-\n...somehow, you immediately close the book shut without even thinking about it, and rip out all the pages.\nPerhaps it wasn't you who ripped up that book."]
+    ["Old Book 1", 9, 4, "-- THE SILLY STRINGS by Mike D. --\nHave you lost control of your life? You just gotta grab it by the SILLY STRINGS!\n...the book is weirding you out. You assume it's some obscure reference."],
+    ["Old Book 2", 9, 4, "-- THE PLAYER by Simon Skeleton --\nTHERE IS A PROPHECY... THAT WE LIVE UNDER THE REIGN OF A GOD.\nA GOD WITH THE POWER TO CREATE OR ERASE ANYTHING.\nIN REALITY, I AM NOT THE TRUE KING OF THIS LAND.\nTHE LEGENDS CALL THAT GOD...\nTHE PLAY-\n...somehow, you immediately close the book shut without even thinking about it, and rip out all the pages.\nPerhaps it wasn't you."]
 ]
 
 # 2D array of enemies
@@ -102,13 +102,68 @@ hp = 100
 # player starts with a full inventory
 inventory_count = 0
 coins = 0
+# misc
 west_puzzle_completed = False
+leave_attempts = 0
+boss_finished = False
+boss_killed = None
+vault_robbed = False
 # encounter chance starts at 1/4 (3)
 encounter_chance = 3
 # playing
 in_game = True
 
-# narrate speech word by word
+def tutorial():
+    if input("Skip Tutorial? (y/n) - ") != "y":
+        print("Welcome to the Dungeon. Let's learn how to play.")
+        sleep(1)
+        # rooms tutorial
+        print("The game works by moving around different rooms.\nYou can only move to a room if there is a door to it in the current room.\nEnter [Room Number] to move.\n")
+        print("""
+/- You can't move here.
+[x]<[v]--You can move here.
+    ^
+[v]<[O]--If you are here...
+""")
+        sleep(3)
+        while True:
+            tut_move = input("\nLet's give it a go.\nYou are in Room 0\nEnter [1] to move to Room 1\n - ")
+            if tut_move == "1":
+                print("Great job!")
+                break
+            elif tut_move == "I don't care":
+                print("One heck of an attitude.")
+            elif tut_move == "backrooms":
+                print("You find yourself in a dim yellow hall. A monster runs up to you and-\n[GAME OVER] Nah, just kidding.")
+            else:
+                print("Wrong room! Try again.")
+        print("Throughout rooms, you may find items. You can pick items up, and drop them in any room.\nThe types of items are: Consumables, Keys, Torch and Books.")
+        sleep(1)
+        print("Some rooms are dark, and you need a Torch to see what's inside. Others are locked, and you need Keys.")
+        sleep(2)
+        print("Across the dungeon, you will encounter enemies. Here is a DUMMY to help you learn how to fight.")
+        # battle tutorial
+        print("You encountered the DUMMY!\n[DUMMY - HP: 0 / 0 - ATK: 0]")
+        while True:
+            battle_choice = input("\nIn battle, you can choose one of 4 options on your turn: ATTACK, ITEMS, MAGIC, or DEFEND.\nFirst let's try attacking. Enter [0] to attack.\n[0] Attack\n[1] Items\n[2] Magic\n[3] Defend\n - ")
+            if battle_choice == "0":
+                print("You attack the DUMMY. Attacking can get you MP. An MP stands for a ridiculous political stance- I mean, Magic Points.\nYou can gather Magic Points to unlock spells!\nDefending gets you a lot more MP and reduces some damage.")
+                break
+            else:
+                print("You attack the AIR. Choose [0] to attack, you DUMMY!")
+        while True:
+            battle_choice = input("\nNow let's say you've gathered a bunch of MP, and you want to use it on a spell. Choose [2] to use a magic spell!\n[0] Attack\n[1] Items\n[2] Magic\n[3] Defend\n - ")
+            if battle_choice == "2":
+                print("In a real battle, there is a whole bunch of spells you can use. For now, let's pretend you've cast a SUPER ULTRA MEGA ATTACK MAGIC DEATH BLOOD SPELL spell.")
+                print("You cast SUPER ULTRA MEGA ATTACK MAGIC DEATH BLOOD SPELL!")
+                break
+            else:
+                print("You cast ABSOLUTELY NOTHING! Choose [2] to cast a spell, you DUMMY!")
+        print("You defeated the DUMMY! Except it's just a dummy. Now you're ready to enter the dungeon. Good luck!")
+        sleep(5)
+
+
+# narrate speech letter by letter
 def narrate(txt):
     for char in txt:
         print(char, end="", flush=True)
@@ -150,7 +205,7 @@ def menu():
 
 # main loop for moving
 def move_rooms():
-    global room, hp, inventory_count, encounter_chance, in_game
+    global room, hp, inventory_count, encounter_chance, in_game, leave_attempts, coins
     try:
         next_room = int(input("\nWhich room would you like to move to? (room no.) - "))
 
@@ -171,8 +226,32 @@ def move_rooms():
             confirm_leave = input("\nYou approach the Gate. Are you sure you want to leave the dungeon? (y/n) - ")
             # confirm?
             if confirm_leave == "y":
-                in_game = False
-                print(f"\n[GAME COMPLETE!]\nYou crawl through the gate and sprint outside, not looking back.\nCOINS: {coins}")
+                if coins >= 20:
+                    print(f"\n[GAME COMPLETE] Neutral Ending\nYou crawl through the gate and sprint outside.\nCOINS COLLECTED: {coins}")
+                    in_game = False
+                elif boss_killed == True:
+                    print(f"\n[GAME COMPLETE] Merciless Ending\nYou barge through the gate... with no remorse for the SKELETON KING.\nCOINS COLLECTED: {coins}")
+                    in_game = False
+                elif boss_killed == False:
+                    print(f"\n[GAME COMPLETE] Skeleton King Ending\nYou calmly walk out through the gate... at ease for knowing the SKELETON KING is safe.\nCOINS COLLECTED: {coins}, but it's the thought that counts, right?")
+                    in_game = False
+                else:
+                    if leave_attempts == 0:
+                        print("You shouldn't leave yet. Get at least 20 coins first or your adventure is useless.")
+                    elif leave_attempts == 1:
+                        print("Get more coins.")
+                    elif leave_attempts == 2:
+                        print("Seriously, you need at least 20 coins to exit.")
+                    elif leave_attempts == 3:
+                        print("Is this some kind of joke? You can't exit yet!")
+                    elif leave_attempts == 4:
+                        print("STOP TRYING TO EXIT!")
+                    elif leave_attempts == 5:
+                        print("GETTING 20 COINS ISN'T THAT HARD! JUST FIND ONE ENEMY!!!!")
+                    elif leave_attempts == 6:
+                        print("OKAY, FINE! Here's 20 coins. Happy now?\nYou got 20 coins.")
+                        coins += 20
+                    leave_attempts += 1
             else:
                 print("\nYou decide to keep going.")
         
@@ -183,11 +262,9 @@ def move_rooms():
                     print("\n[!] The door is locked.")
                 else:
                     # move to the appropriate room
-                    prev_room = room
                     room = map[next_room]
             else:
                 # move to the appropriate room
-                prev_room = room
                 room = map[next_room]
 
     except ValueError:
@@ -196,22 +273,136 @@ def move_rooms():
     
     # go back to the select menu by ending the function
         
+# enter the shop while in room 3
+def shop():
+    global coins, inventory_count
+    
+    # initial
+    print("The skeleton looks tired by his daily 9-to-5 of sitting on a chair for an abandoned shop.\nYou stick your arms out and tilt down your head like a zombie just in case he notices that you're not a monster.")
+    sleep(1)
+    narrate("zzz...")
+    sleep(3)
+    print("You ring the bell.")
+    print("\nSEB SKELETON:")
+    narrate("uh... yo, uh, i'm s-seb skeleton, uhh...")
+
+    in_shop = True
+    while in_shop:
+        narrate("\nuh, w-welcome to the dungeon shop. how can i, like, help?")
+        try:
+            shop_choice = int(input(f"COINS: {coins}\nWhat would you like to do?\n[0] Buy\n[1] Sell\n[2] Talk\n[3] Leave\n - "))
+        except ValueError:
+            narrate("eh?")
+
+        # buy items
+        if shop_choice == 0:
+            narrate("take a pick.")
+            print("\nSHOP:")
+            for i in range(2,6):
+                print(f"[{i}] {items[i][0]} ({items[i][4]} coins)")
+            try:
+                choice_item_buy = input(" - ")
+                if choice_item_buy == "anime waifu body pillow":
+                    narrate("WE DON'T SELL THAT HERE, OK!!!")
+                    sleep(2)
+                    narrate("(i'll ask my boss for one, i don't get paid enough to buy my own)")
+                    narrate("(anything for you, my beloved spamton-san)")
+                else:
+                    choice_item_buy = int(choice_item_buy)
+                    try:
+                        if items[choice_item_buy][1] == -2:
+                            if coins >= items[choice_item_buy][4]:
+                                items[choice_item_buy][1] = -1
+                                coins -= items[choice_item_buy][4]
+                                narrate("that's yours. thanks, kid.")
+                                print(f"You got the {items[choice_item_buy][0]}.")
+                            else:
+                                narrate("uh... looks like you can't afford that.")
+                                narrate("tough times, buddy... tough times.")
+                        elif items[choice_item_buy] in [items[2], items[3], items[4], items[5]]:
+                            narrate("all sold out, buddy.")
+                            narrate("someone probably bought it earlier... or was it you... i need more sleep.")
+                        else:
+                            narrate("sorry mate, we don't sell that here.")
+                            narrate("you might wanna go to, like, amazon for that.")
+                    except IndexError:
+                        narrate("sorry mate, we don't sell that here.")
+                        narrate("you might wanna go to, like, amazon for that.")
+            except ValueError:
+                narrate("uh, that sounds like total gibberish.")
+        
+        # sell items (you can't sell items)
+        elif shop_choice == 1:
+            narrate("this look like a pawn shop to you or somin'?")
+            narrate("anyways, i'm living flat broke off the scraps. so don't push me.")
+        
+        # talk to the shopkeeper (not a pleasant experience)
+        elif shop_choice == 2:
+            narrate("i'm all ears, kid.")
+            try:
+                choice_talk = int(input("What do you want to talk about?\n[0] Job\n[1] Dungeon\n[2] King\n[*] Cancel\n - "))
+                if choice_talk == 0:
+                    narrate("yeah, this job sucks. i don't even know who my boss is.")
+                    narrate("if i did, i'd rip the guy to pieces.")
+                    narrate("and then send him several hate letters, talking about how bad he is,")
+                    narrate("and also how i want him to buy me a spamt-")
+                    narrate("huh? nothin'.")
+                    sleep(1)
+                    narrate("huh? why don't i quit? no idea. no one even comes here.")
+                    narrate("also, who came up with this name? 'the dungeon shop'??")
+                elif choice_talk == 1:
+                    narrate("this dungeon's a wild place, i'm tellin' ya, kid.")
+                    narrate("it's small, for matters, and there's barely anyone around.")
+                    narrate("i might move if i get the chance.")
+                    sleep(1)
+                    narrate("hey, at least you showed up.")
+                    sleep(1)
+                    narrate("hol'up.. you're new here.")
+                    narrate("you're a human, right?")
+                    sleep(1)
+                    narrate("meh, i don't care. there's no rule against humans being in the shop.")
+                elif choice_talk == 2:
+                    narrate("the king, huh? he's a mysterious guy, i'll tell ya that.")
+                    narrate("only met him a couple times, like this one time we were all invited to his birthday.")
+                    sleep(1)
+                    narrate("he made loads of food for everyone in the dungeon,")
+                    narrate("but he forgot that the ghosts would just phase through the food.")
+                    narrate("if only you'd seen the look on his face. haha.")
+                    sleep(1)
+                    narrate("by the way, i'm not his son or anythin'. us skeletons just all share the same surname for some reason.")
+                else:
+                    narrate("aight.")
+            except ValueError:
+                narrate("aight.")
+        
+        else:
+            print("later, kiddo.")
+            in_shop = False
+            
 
 # run the RNG for an encounter
 def handle_encounters():
-    global room, encounter_chance
+    global room, encounter_chance, coins
 
-    if room == map[10]:
+    if room == map[10] and not boss_finished:
         final_boss() # final boss room
+    elif room == map[8] and not vault_robbed:
+        print("The vault is filled with riches!\nYou nicked 500 coins.")
+        coins += 500
+        vault_robbed = True
+    elif room == map[3]:
+        shop() # shop
     elif randint(0,encounter_chance) == 0:
         # choose an enemy
         encounter = choice(enemies)
         # 25% chance of finding an enemy every move (by default)
-        print(f"\nYou encounter the {encounter[0]}!")
-        if not debug_mode:
-            battle(encounter)
+        if debug_mode:
+            print(f"\nYou encounter the {encounter[0]}!\nOr not.")
+        elif boss_finished:
+            print("\nYou thought you encountered someone, but there is no one left.")
         else:
-            print("Or not.")
+            print(f"\nYou encounter the {encounter[0]}!")
+            battle(encounter)
         
 # west dungeon puzzle 
 def west_puzzle():
@@ -296,27 +487,33 @@ def west_puzzle():
 
 # enter battle state after an encounter
 def battle(enemy):
-    global hp, inventory_count, coins
+    global hp, inventory_count, coins, encounter_chance
 
     print("\nBATTLE:\n - Attack or cast a spell to defeat the enemy\n - Gain MP from attacking or defending\n - Use MP to cast spells\n - Remaining MP after a battle will turn into coins")
 
     # magic points (MP) are the points required to cast a spell
     mp = 0
     diversion_active = False
+    defending = False
 
     # setup enemy vars
     enemy_name = enemy[0]
     enemy_atk = enemy[1]
     enemy_max_hp = enemy[2]
+    enemy_spell = enemy[3]
     enemy_hp = enemy_max_hp
     enemy_mp = 0
 
+    # unique to enemy
+    xombi_venom = 0
+    goglim_skip = False
+
     # random hit strength
     player_hits = [
-        [f"Weak hit. {name} deals {round(enemy_max_hp*0.3)} damage.", round(enemy_max_hp*0.3)],
-        [f"Moderate hit. {name} deals {round(enemy_max_hp*0.35)} damage!", round(enemy_max_hp*0.35)],
-        [f"Strong hit! {name} deals {round(enemy_max_hp*0.4)} damage!", round(enemy_max_hp*0.4)],
-        [f"CRITCAL HIT! {name} deals {round(enemy_max_hp*0.5)} damage!", round(enemy_max_hp*0.5)]
+        [f"Weak hit. {name} deals 5 damage.", 5],
+        [f"Moderate hit. {name} deals 10 damage!", 10],
+        [f"Strong hit! {name} deals 16 damage!", 16],
+        [f"CRITCAL HIT! {name} deals 25 damage!", 25]
     ]
 
     # start battle loop
@@ -326,92 +523,97 @@ def battle(enemy):
 
         # check player hp
         check_hp()
+        if xombi_venom > 0:
+            print(f"The venom in your veins bites you - hurt {xombi_venom} damage!")
+            hp -= xombi_venom
 
         # enemy stats: name, attack, hp, spells
         print(f"\nENEMY: [{enemy_name} - HP: {enemy_hp} / {enemy_max_hp} - ATK: {enemy_atk} - MAGIC POINTS: {enemy_mp}]")
-        print(f"\nPLAYER: [{name} - HP: {hp} / {max_hp} - MAGIC POINTS: {mp}]")
+        print(f"\nPLAYER: [{name} - HP: {hp} / {max_hp} - ATK: 5 - MAGIC POINTS: {mp}]")
 
         try:
-            battle_choice = int(input("────────────────────────\nWhat will you do?\n[0] Attack\n[1] Items\n[2] Magic\n[3] Defend\n - "))
-            # handle options
-            if battle_choice == 0:
-                print(f"{name} attacks the {enemy_name}.")
-                sleep(1)
+            if not goglim_skip:
+                battle_choice = int(input("────────────────────────\nWhat will you do?\n[0] Attack\n[1] Items\n[2] Magic\n[3] Defend\n - "))
+                # handle options
+                if battle_choice == 0:
+                    print(f"{name} attacks the {enemy_name}.")
+                    sleep(1)
 
-                if diversion_active:
-                    # if the diversion spell is activated, deal triple damage
-                    print(f"ULTRA HIT! Through the power of DIVERSION, {name} deals {round(enemy_max_hp*0.8)} damage!")
-                    enemy_hp -= round(enemy_max_hp*0.9)
-                    diversion_active = False
-                else:
-                    # choose a random attack strength and deal that damage
-                    attack = choice(player_hits)
-                    print(attack[0])
-                    enemy_hp -= attack[1]
+                    if diversion_active:
+                        # if the diversion spell is activated, deal triple damage
+                        print(f"ULTRA HIT! Through the power of DIVERSION, {name} deals {round(enemy_max_hp*0.8)} damage!")
+                        enemy_hp -= round(enemy_max_hp*0.9)
+                        diversion_active = False
+                    else:
+                        # choose a random attack strength and deal that damage
+                        attack = choice(player_hits)
+                        print(attack[0])
+                        enemy_hp -= attack[1]
 
-                # gain magic points
-                mp_gain = randint(7,13)
-                mp += mp_gain
-                print(f"{name} gains {mp_gain} MP.")
-            elif battle_choice == 1:
-                inventory()
-            elif battle_choice == 2:
-                print(f"SPELLS:\n")
-                for i in player_spells:
-                    print(f"[{player_spells.index(i)}] {i[0]}: {i[1]} ({i[2]} MP)")
-                spell = int(input(" - "))
-                if spell < 0 or spell > len(player_spells):
-                    print("[!] That is not a spell. Please choose one of the options.")
-                else:
-                    if spell == 0:
-                        if mp >= 20:
-                            print(f"\n{name} uses HEALING CHARM!\nYou channel your energy towards {name}'s wounds...")
-                            sleep(1)
-                            hp += 20
-                            mp -= 20
+                    # gain magic points
+                    mp_gain = randint(7,13)
+                    mp += mp_gain
+                    print(f"{name} gains {mp_gain} MP.")
+                elif battle_choice == 1:
+                    inventory()
+                elif battle_choice == 2:
+                    print(f"SPELLS:\n")
+                    for i in player_spells:
+                        print(f"[{player_spells.index(i)}] {i[0]}: {i[1]} ({i[2]} MP)")
+                    spell = int(input(" - "))
+                    if spell < 0 or spell > len(player_spells):
+                        print("[!] That is not a spell. Please choose one of the options.")
+                    else:
+                        if spell == 0:
+                            if mp >= 20:
+                                print(f"\n{name} uses HEALING CHARM!\nYou channel your energy towards {name}'s wounds...")
+                                sleep(1)
+                                hp += 20
+                                mp -= 20
 
-                            print("Healed 20 HP!")
-                        else:
-                            print(f"Not enough MP! You need {20-mp} more.")
-                    elif spell == 1:
-                        if mp >= 30:
-                            print(f"\n{name} uses GLARE!\n{name} stares at the {enemy_name} with an intimidating look...")
-                            sleep(1)
-                            print("...")
-                            sleep(2)
-                            if enemy_atk > 1:
-                                if enemy_atk == 2:
-                                    enemy_atk = 1
-                                else:
-                                    enemy_atk -= 2
-                                print(f"The {enemy_name} starts sweating... its ATTACK drops by 2! (Now {enemy_atk})")
+                                print("Healed 20 HP!")
                             else:
-                                print(f"The {enemy_name} starts sweating... its ATTACK would have dropped but it barely has any... (Still {enemy_atk})")
-                            mp -= 30
-                        else:
-                            print(f"Not enough MP! You need {30-mp} more.")
-                    elif spell == 2:
-                        if mp >= 45:
-                            print(f"\n{name} uses DIVERSION!\nYou channel your energy towards {name}'s hand. Their blade seethes with power...")
-                            sleep(2)
-                            diversion_active = True
-                            print("Next attack will deal ULTRA damage!")
-                            mp -= 45
-                        else:
-                            print(f"Not enough MP! You need {45-mp} more.")
+                                print(f"Not enough MP! You need {20-mp} more.")
+                        elif spell == 1:
+                            if mp >= 30:
+                                print(f"\n{name} uses GLARE!\n{name} stares at the {enemy_name} with an intimidating look...")
+                                sleep(1)
+                                print("...")
+                                sleep(2)
+                                if enemy_atk > 1:
+                                    if enemy_atk == 2:
+                                        enemy_atk = 1
+                                    else:
+                                        enemy_atk -= 2
+                                    print(f"The {enemy_name} starts sweating... its ATTACK drops by 2! (Now {enemy_atk})")
+                                else:
+                                    print(f"The {enemy_name} starts sweating... its ATTACK would have dropped but it barely has any... (Still {enemy_atk})")
+                                mp -= 30
+                            else:
+                                print(f"Not enough MP! You need {30-mp} more.")
+                        elif spell == 2:
+                            if mp >= 45:
+                                print(f"\n{name} uses DIVERSION!\nYou channel your energy towards {name}'s hand. Their blade seethes with power...")
+                                sleep(2)
+                                diversion_active = True
+                                print("Your next attack will deal ULTRA damage!")
+                                mp -= 45
+                            else:
+                                print(f"Not enough MP! You need {45-mp} more.")
 
-            elif battle_choice == 3:
-                print(f"{name} defends for this turn!")
-                # gain magic points
-                mp_gain = randint(16,30)
-                mp += mp_gain
-                sleep(1)
-                print(f"{name} gains {mp_gain} MP.")
-            else:
-                print("[!] That is not an option. Please choose one of the options.")
+                elif battle_choice == 3:
+                    defending = True
+                    print(f"{name} defends for this turn!")
+                    # gain magic points
+                    mp_gain = randint(16,30)
+                    mp += mp_gain
+                    sleep(1)
+                    print(f"{name} gains {mp_gain} MP.")
+                else:
+                    print("[!] That is not an option. Please choose one of the options.")
             
             # if a valid option was chosen, switch to enemy's turn
-            if battle_choice in range(0,4): # if battle choice either 0, 1, 2 or 3
+            if battle_choice in range(0,4) or goglim_skip: # if battle choice either 0, 1, 2 or 3, or GOBLIN'S GREED used
                 # check if enemy is dead
                 if enemy_hp <= 0:
                     print(f"\nYou have defeated the {enemy_name}!\nYou got {mp} coins.")
@@ -421,20 +623,48 @@ def battle(enemy):
                 else:
                     # if enemy mp is over 25, there is a random chance to cast a spell
                     if enemy_mp > 25 and randint(0, 1) == 0:
-                            print("Enemy spells not yet implemented...")
+                        print(f"\nThe {enemy_name} uses {enemy_spell}!")
+                        if enemy_spell == "BONETROUSLE":
+                            enemy_hit = round(uniform(2,5) * enemy_atk)
+                            hp -= enemy_hit
+                            print(f"{name} is crushed by a series of bones! Took {enemy_hit} damage!")
+
+                        elif enemy_spell == "VENOM CURSE":
+                            xombi_venom = round(0.2 * (uniform(2,5) * enemy_atk) + (0.5 * xombi_venom))
+                            print(f"You feel a horrible, burning feeling in your stomach! VENOM CURSE will hurt {xombi_venom} damage every turn!")
+                        
+                        elif enemy_spell == "SHADOW OF THE COLD":
+                            if encounter_chance > 0:
+                                encounter_chance -= 1
+                                print("A terrifying coldness courses through your veins... Enemies can find you more easily now.")
+                            else:
+                                print("The coldness in your body continues to make you shiver...")
+                        
+                        elif enemy_spell == "GOBLIN'S GREED":
+                            goglim_skip = True
+                            print(f"{enemy_name} is so greedy it steals your next turn!")
+                        
                     else:
                         print(f"\nThe {enemy_name} attacks {name}.")
                         sleep(1)
 
                         # enemy damage formula: random value * enemy attack
                         enemy_hit = round(0.5 * (uniform(2,5) * enemy_atk))
-                        hp -= enemy_hit
                         print(f"{enemy_name} deals {enemy_hit} damage!")
+                        if defending:
+                            enemy_hit -= round(enemy_hit*0.3)
+                            print(f"But {name} defends and absorbs {round(enemy_hit*0.3)} damage!")
+                            defending = False
+                        hp -= enemy_hit
 
                         # gain magic points
                         mp_gain = randint(7,12)
                         enemy_mp += mp_gain
                         print(f"{enemy_name} gains {mp_gain} MP.")
+            
+            # reset goblin's greed
+            if goglim_skip:
+                goglim_skip = False
 
         except ValueError:
             print("[!] Invalid input. Please enter an integer.")
@@ -468,7 +698,7 @@ def final_boss():
         sleep(2)
 
         # begin the fight
-        print("\nBATTLE:\n - Attack or cast a spell to defeat the enemy\n - Gain MP from attacking or defending\n - Use MP to cast spells\n - The SKELETON KING will not use traditional spells, instead he will use his magic for puzzles.\n - The puzzles you solve may make you stronger...")
+        print("\nBATTLE:\n - Attack or cast a spell to defeat the enemy\n - Gain MP from attacking or defending\n - Use MP to cast spells\n - The SKELETON KING will not use traditional spells, instead he will use his magic for puzzles.\n - The puzzles you solve will heal you!")
         sleep(3)
         
     # final boss stats
@@ -488,6 +718,7 @@ def final_boss():
     # magic points (MP) are the points required to cast a spell
     mp = 0
     diversion_active = False
+    defending = False
 
     # setup enemy vars
     enemy_name = boss[0]
@@ -539,10 +770,13 @@ def final_boss():
             boss_puzzle_2()
         elif turn == 12:
             boss_puzzle_3()
+            in_battle = False
+            coins += mp
+            break
 
         # enemy stats: name, attack, hp, spells
         print(f"\nENEMY: [{enemy_name} - HP: {enemy_hp} / {enemy_max_hp} - ATK: {enemy_atk}]")
-        print(f"\nPLAYER: [{name} - HP: {hp} / {max_hp} - MAGIC POINTS: {mp}]")
+        print(f"\nPLAYER: [{name} - HP: {hp} / {max_hp} - ATK: 12 - MAGIC POINTS: {mp}]")
 
         try:
             battle_choice = int(input("────────────────────────\nWhat will you do?\n[0] Attack\n[1] Items\n[2] Magic\n[3] Defend\n - "))
@@ -606,6 +840,7 @@ def final_boss():
                             print(f"Not enough MP! You need {45-mp} more.")
 
             elif battle_choice == 3:
+                defending = True
                 print(f"{name} defends for this turn!")
                 # gain magic points
                 mp_gain = randint(26,50)
@@ -622,6 +857,7 @@ def final_boss():
                     print(f"\nYou have defeated the SKELETON KING!\nYou got {mp} coins.")
                     sleep(2)
                     narrate("OR DID YOU?")
+                    print("The SKELETON KING heals MAX HP???")
                     enemy_hp = 500
                     #coins += mp
                     #in_battle = False
@@ -637,8 +873,13 @@ def final_boss():
 
                     # enemy damage formula: random value * enemy attack
                     enemy_hit = round(0.5 * (uniform(2,5) * enemy_atk))
+                    print(f"The SKELETON KING deals {enemy_hit} damage!")
+                    if defending:
+                        enemy_hit -= round(enemy_hit*0.3)
+                        print(f"But {name} defends and absorbs {round(enemy_hit*0.3)} damage!")
+                        defending = False
                     hp -= enemy_hit
-                    print(f"SKELETON KING deals {enemy_hit} damage!")
+                    
                     
                     # update turn count
                     turn += 1
@@ -778,22 +1019,25 @@ def boss_puzzle_2():
     sleep(2)
 
 def boss_puzzle_3():
-    print("PLACEHOLDER: I didn't have time to complete the third puzzle. This will be finished in v4.")
+    # print("PLACEHOLDER: I didn't have time to complete the third puzzle. This will be finished in v4.")
+    # update: This will not be finished in v4, I didn't have time haha
+    # No one will ever know I left this out.. unless you're reading this
     boss_ending()
 
 def boss_ending():
+    global coins, boss_finished, boss_killed
     # adventurer scene
 
     print("Suddenly, everything turns black.\nYou open your eyes to find yourself in a dark void, followed by a series of platforms.")
     print("""
  o
- L    ---
+ I    ---
 ---   `-'  ---
 `-'        `-'
 """)
     sleep(5)
-    for _ in range(5):
-        print("You jump to the next platform...\n")
+    for _ in range(3):
+        print("You jump to the next platform...")
         sleep(1)
 
     print(f"\nThere is a mirror here. You look inside...\nYou see not yourself... but {name}.")
@@ -811,7 +1055,9 @@ def boss_ending():
     sleep(2)
     narrate("Thank you for guiding me through this place.")
     narrate("But that felt strange...")
+    sleep(2)
     narrate("I think you should")
+    sleep(1)
     narrate("leave me alone")
     sleep(2)
     print("\n...")
@@ -842,17 +1088,41 @@ def boss_ending():
             messagebox.showerror("SKELETON KING", "I SEE HOW IT IS.")
             messagebox.showerror("SKELETON KING", "WELL, I GUESS THERE IS NOTHING I CAN DO.")
             messagebox.showerror("SKELETON KING", "NOW, DO WHAT YOU WISH TO DO.")
+            messagebox.showerror("Dungeon Game: ATTACK", "You hit the SKELETON KING. You deal 6.668014e+240 damage.")
             messagebox.showinfo("Dungeon Game", "You have defeated the SKELETON KING! You got 5.0706024e+30 coins.")
+            coins += 5.0706024e+30
             messagebox.showwarning("Dungeon Game", "But was what you did... Really worth it?")
         root.mainloop()
     except:
-        print("Your IDE does not support messagebox. But you won.")
-    exit()
-
+        print("[!] Your environment does not support tkinter.")
+        narrate("HELLO AGAIN.")
+        narrate("CONGRATULATIONS. YOU HAVE WON THE GAME.")
+        narrate("BUT AT WHAT COST?")
+        narrate("WHAT HAPPENS NOW... I WILL LEAVE UP TO YOU.")
+        narrate("WOULD YOU LIKE TO ENTER ME INTO THE SAFETY OF YOUR DOMAIN...OR ERASE ME FROM EXISTENCE?")
+        choice = input("Save the SKELETON KING? (y to save) - ")
+        if choice == "y" or choice == "Y":
+            narrate("THANK YOU.")
+            narrate("I BELIEVE YOU HAVE MADE THE RIGHT CHOICE.")
+            narrate("WELL, I WILL SEE YOU LATER.")
+            print("You have saved the SKELETON KING! You got 0 coins.\n")
+            boss_killed = False
+        else:
+            narrate("AH.")
+            narrate("I SEE HOW IT IS.")
+            narrate("WELL, I GUESS THERE IS NOTHING I CAN DO.")
+            narrate("NOW, DO WHAT YOU WISH TO DO.")
+            print("You hit the SKELETON KING. You deal 6.668014e+240 damage.")
+            print("You have defeated the SKELETON KING! You got 5.0706024e+30 coins.\n")
+            coins += 5.0706024e+30
+            sleep(2)
+            print("But was what you did... Really worth it?\n")
+            boss_killed = True
+    boss_finished = True
 
 # print player stats
 def player_stats():
-    print(f"\n[{name} - HP: {hp} / {max_hp}]")
+    print(f"\n[{name} - HP: {hp} / {max_hp} - COINS: {coins}]")
 
 # check if hp is over max or 0
 def check_hp():
@@ -974,8 +1244,6 @@ def handle_room_items():
                 print(f"You got the {i[0]}.")
             else:
                 print(f"You left the {i[0]} in the room.")
-    
-    # give coins if the player is in the vault
 
 # gives the name and description of the room
 def describe_room():
@@ -1046,16 +1314,25 @@ else:
     name = input("> ")
     
     narrate(f"YOU HAVE CHOSEN: {name}...")
-    narrate("THAT IS A GREAT NAME.")
+    if name.lower() == "death":
+        narrate("WHAT AN INSPIRING QUOTE. I WONDER WHERE THAT CAME FROM.")
+    elif name.lower() in ["simon", "skeleton king", "simon skeleton"]:
+        narrate("OH DEAR...")
+        narrate("MAYBE YOU WOULD PREFER THE NAME 'NEO'?")
+        name = "Neo"
+    else:
+        narrate("THAT IS A GREAT NAME.")
     sleep(1)
 
-    # enter main loop
     narrate(f"VERY WELL THEN. PLAYER... {name}... LET US BEGIN THE ADVENTURE...")
     sleep(3.5)
 
     lazy_mode = False
     debug_mode = False
-    
 
+# start tutorial
+tutorial()
+
+# start game
 print("\nYou cautiously tread underneath the towering gate. The long hall ahead is dimly lit, and dusty cobwebs span the corners.")
 menu()
