@@ -13,9 +13,9 @@ except:
     pass
 
 # clear data (also ignore this)
-data = open("data.txt", "w")
-data.write("")
-data.close()
+#f = open("data.txt", "w")
+#f.write("")
+#f.close()
 
 # 2D array of rooms
 map = [
@@ -132,7 +132,7 @@ def tutorial():
                 print("Great job!")
                 break
             elif tut_move == "I don't care":
-                print("One heck of an attitude.")
+                print("One heck of an attitude...")
             elif tut_move == "backrooms":
                 print("You find yourself in a dim yellow hall. A monster runs up to you and-\n[GAME OVER] Nah, just kidding.")
             else:
@@ -140,6 +140,7 @@ def tutorial():
         print("Throughout rooms, you may find items. You can pick items up, and drop them in any room.\nThe types of items are: Consumables, Keys, Torch and Books.")
         sleep(1)
         print("Some rooms are dark, and you need a Torch to see what's inside. Others are locked, and you need Keys.")
+        print("You can find 3 puzzles during your adventure. If you're stuck on one, you can use the cheat codes in README.txt, but obviously you won't need those. ;)")
         sleep(2)
         print("Across the dungeon, you will encounter enemies. Here is a DUMMY to help you learn how to fight.")
         # battle tutorial
@@ -510,7 +511,7 @@ def battle(enemy):
 
     # random hit strength
     player_hits = [
-        [f"Weak hit. {name} deals 5 damage.", 5],
+        [f"Weak hit. {name} deals 7 damage.", 7],
         [f"Moderate hit. {name} deals 10 damage!", 10],
         [f"Strong hit! {name} deals 16 damage!", 16],
         [f"CRITCAL HIT! {name} deals 25 damage!", 25]
@@ -541,8 +542,8 @@ def battle(enemy):
 
                     if diversion_active:
                         # if the diversion spell is activated, deal triple damage
-                        print(f"ULTRA HIT! Through the power of DIVERSION, {name} deals {round(enemy_max_hp*0.8)} damage!")
-                        enemy_hp -= round(enemy_max_hp*0.9)
+                        print(f"ULTRA HIT! Through the power of DIVERSION, {name} deals 40 damage!")
+                        enemy_hp -= 400
                         diversion_active = False
                     else:
                         # choose a random attack strength and deal that damage
@@ -1025,7 +1026,7 @@ def boss_puzzle_3():
     boss_ending()
 
 def boss_ending():
-    global coins, boss_finished, boss_killed
+    global coins, boss_finished, boss_killed, sk_ending
     # adventurer scene
 
     print("Suddenly, everything turns black.\nYou open your eyes to find yourself in a dark void, followed by a series of platforms.")
@@ -1080,18 +1081,20 @@ def boss_ending():
             messagebox.showinfo("SKELETON KING", "I BELIEVE YOU HAVE MADE THE RIGHT CHOICE.")
             messagebox.showinfo("SKELETON KING", "WELL, I WILL SEE YOU LATER.")
             messagebox.showinfo("Dungeon Game", "You have saved the SKELETON KING! You got 0 coins.")
-            data = open("data.txt", "w")
-            data.write("[SKELETON KING]\nTHANK YOU, PLAYER.\nI'M FINE.\nI JUST WANT TO BE LEFT ALONE FOR NOW.")
-            data.close()
+            sk_ending = "[SKELETON KING]\nTHANK YOU, PLAYER.\nI'M FINE.\nI JUST WANT TO BE LEFT ALONE FOR NOW."
+            boss_killed = False
         else:
             messagebox.showerror("SKELETON KING", "AH.")
             messagebox.showerror("SKELETON KING", "I SEE HOW IT IS.")
             messagebox.showerror("SKELETON KING", "WELL, I GUESS THERE IS NOTHING I CAN DO.")
             messagebox.showerror("SKELETON KING", "NOW, DO WHAT YOU WISH TO DO.")
-            messagebox.showerror("Dungeon Game: ATTACK", "You hit the SKELETON KING. You deal 6.668014e+240 damage.")
+            messagebox.showerror("ATTACK", "You hit the SKELETON KING. You deal 6.668014e+240 damage.")
             messagebox.showinfo("Dungeon Game", "You have defeated the SKELETON KING! You got 5.0706024e+30 coins.")
             coins += 5.0706024e+30
             messagebox.showwarning("Dungeon Game", "But was what you did... Really worth it?")
+            sk_ending = "[SKELETON KING]\nBut nobody came."
+            boss_killed = True
+        boss_finished = True
         root.mainloop()
     except:
         print("[!] Your environment does not support tkinter.")
@@ -1106,6 +1109,7 @@ def boss_ending():
             narrate("I BELIEVE YOU HAVE MADE THE RIGHT CHOICE.")
             narrate("WELL, I WILL SEE YOU LATER.")
             print("You have saved the SKELETON KING! You got 0 coins.\n")
+            sk_ending = "[SKELETON KING]\nTHANK YOU, PLAYER.\nI'M FINE.\nI JUST WANT TO BE LEFT ALONE FOR NOW."
             boss_killed = False
         else:
             narrate("AH.")
@@ -1117,6 +1121,7 @@ def boss_ending():
             coins += 5.0706024e+30
             sleep(2)
             print("But was what you did... Really worth it?\n")
+            sk_ending = "[SKELETON KING]\nBut nobody came."
             boss_killed = True
     boss_finished = True
 
@@ -1239,9 +1244,12 @@ def handle_room_items():
     for i in items:
         if i[1] == map.index(room):
             if input(f"\nYou found the {i[0]}. Pick it up? (y/n) - ") == "y":
-                items[items.index(i)][1] = -1
-                inventory_count += 1
-                print(f"You got the {i[0]}.")
+                if inventory_count > 7:
+                    print("You're carrying too much. Drop something first.")
+                else:
+                    items[items.index(i)][1] = -1
+                    inventory_count += 1
+                    print(f"You got the {i[0]}.")
             else:
                 print(f"You left the {i[0]} in the room.")
 
@@ -1314,11 +1322,16 @@ else:
     name = input("> ")
     
     narrate(f"YOU HAVE CHOSEN: {name}...")
-    if name.lower() == "death":
+    if name == "" or name == " ":
+        narrate("YOU CHOOSE NOT TO GIVE YOUR ADVENTURER A NAME?")
+        narrate("IN THAT CASE, I WILL LET THEM CHOOSE FOR THEMSELVES.")
+        narrate("THEY HAVE CHOSEN... 'Neo'.")
+        name = "Neo"
+    elif name.lower() == "death":
         narrate("WHAT AN INSPIRING QUOTE. I WONDER WHERE THAT CAME FROM.")
     elif name.lower() in ["simon", "skeleton king", "simon skeleton"]:
         narrate("OH DEAR...")
-        narrate("MAYBE YOU WOULD PREFER THE NAME 'NEO'?")
+        narrate("MAYBE YOU WOULD PREFER THE NAME 'Neo'?")
         name = "Neo"
     else:
         narrate("THAT IS A GREAT NAME.")
@@ -1336,3 +1349,22 @@ tutorial()
 # start game
 print("\nYou cautiously tread underneath the towering gate. The long hall ahead is dimly lit, and dusty cobwebs span the corners.")
 menu()
+
+# at the end of the game, save points in the save file
+f = open("data.txt", "r")
+lines = f.readlines()
+
+if lines:
+    high_score = lines[2][12:]
+    if int(high_score) < coins:
+        high_score = coins
+else:
+    high_score = 0
+
+if not boss_finished:
+    sk_ending = "No guests"
+
+save = "[SAVE FILE - YOUR HOME]\n\nHIGH SCORE: " + str(high_score) + "\n\nGUESTS: " + sk_ending
+
+f = open("data.txt", "w")
+f.write(save)
